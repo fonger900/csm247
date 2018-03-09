@@ -19,7 +19,7 @@ CYAN='\033[0;36m'
 # Function for coloring success messages as green
 success()
 {
-  echo -ne "[ ${GREEN}ok${NC} ] $1\n"
+  printf "[ ${GREEN}ok${NC} ] $1\n"
 }
 
 # Function for coloring error messages as red
@@ -35,21 +35,35 @@ error()
   elif [ -n "`which notify-send`" ]; then
     notify-send "ERROR: $TITLE: $1"
   else
-    echo -e "${RED}ERROR${NC}: $1\n$TITLE"
+    printf "${RED}ERROR${NC}: $1\n$TITLE\n"
   fi
 }
 
 # Function for coloring step of process's messages as yellow
 process()
 {
-  echo -ne "[....] $1\r"
+  printf "[....] $1\r"
 }
 
+sub_process()
+{
+  printf "->[....] $1\r"
+}
+
+sub_success()
+{
+  printf "->[ ${GREEN}ok${NC} ] $1\n\n"
+}
+
+warn()
+{
+  printf "${YELLOW}warn: $1"
+}
 # ---------------------------------------------------------------------
 # Variables for checking builtin command's existence
 # ---------------------------------------------------------------------
 
-USER=`who | awk '{print $1}'`
+USER=`who | awk 'END{print $1}'`
 UNAME=`which uname`
 GREP=`which egrep`
 GREP_OPTIONS=""
@@ -83,27 +97,28 @@ process "Checking apache2"
 # Check if apache2 server has been installed
 if [ -z "$APACHE2" ]; then
 	error "Missing apache2 - Please install apache2."
-  echo "Start installing Apache2"
-  apt-get install apache2 -y
+  sub_process "Start installing Apache2"
+  apt-get install apache2 -y /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to install apache2!"
     exit 1
   fi
-  #exit 1
+  sub_success "Finish installing Apache2"
 else
   success "Checking apache2"
 fi
 
 # Check whether PHP installed
+process "Checking php7.0"
 if [ -z "$PHP" ]; then
   error "PHP is not installed - Please install PHP 7.0"
-  echo "Start installing php7.0"
-  apt-get install php7.0 -y
+  sub_process "Start installing php7.0"
+  apt-get install php7.0 -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to install php7.0!"
     exit 1
   fi
-  #exit 1
+  sub_success "Finish installing php7.0"
 fi
 
 # Check PHP version
@@ -119,13 +134,13 @@ fi
 CHECK_LIBAPACHE2_PHP=`dpkg -l | grep libapache2-mod-php7.0`
 if [ "$?" -ne "0" ]; then
   error "Missing libapache2-mod-php7.0 package"
-  echo "Start installing libapache2-mod-php7.0"
-  apt-get install libapache2-mod-php7.0 -y
+  sub_process "Start installing libapache2-mod-php7.0"
+  apt-get install libapache2-mod-php7.0 -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to install libapache2-mod-php7.0!"
     exit 1
   fi
-  #exit 1
+  sub_success "Finish installing libapache2-mod-php7.0"
 else
   success "Checking libapache2-mod-php7.0 package"
 fi
@@ -136,34 +151,37 @@ fi
 COMMAND_OUTPUT=`php -m | egrep "mbstring"`
 if [ "$?" -ne "0" ]; then
   error "Missing PHP mbstring module"
-  echo "Start installing php7.0-mbstring."
-  apt-get install php-mbstring -y
+  sub_process "Start installing php7.0-mbstring."
+  apt-get install php-mbstring -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to installing php-mbstring."
     exit 1
   fi
+  sub_success "Finish installing \"$COMMAND_OUTPUT\""
 fi
 
 COMMAND_OUTPUT=`php -m | egrep "json"`
 if [ "$?" -ne "0" ]; then
   error "Missing PHP json module"
-  echo "Start installing php7.0-json."
+  sub_process "Start installing php7.0-json."
   apt-get install php7.0-json -y
   if [ "$?" -ne "0" ]; then
     error "Failed to installing php7.0-json."
     exit 1
   fi
+  sub_success "Finish installing \"$COMMAND_OUTPUT\""
 fi
 
 COMMAND_OUTPUT=`php -m | egrep "xml"`
 if [ "$?" -ne "0" ]; then
   error "Missing PHP xml module"
-  echo "Start installing php7.0-xml."
-  apt-get install php7.0-xml -y
+  sub_process "Start installing php-xml."
+  apt-get install php-xml -y
   if [ "$?" -ne "0" ]; then
-    error "Failed to installing php7.0-xml."
+    error "Failed to installing php-xml."
     exit 1
   fi
+  sub_success "Finish installing \"$COMMAND_OUTPUT\""
 fi
 
 COMMAND_OUTPUT=`php -m | egrep "PDO"`
@@ -186,25 +204,39 @@ fi
 
 COMMAND_OUTPUT=`php -m | egrep "curl"`
 if [ "$?" -ne "0" ]; then
-  error "Missing PHP curl module"
-  echo "Start installing php7.0-curl."
+  warn "Missing PHP curl module"
+  sub_process "Start installing php7.0-curl."
   apt-get install php7.0-curl -y
   if [ "$?" -ne "0" ]; then
     error "Failed to installing php7.0-curl."
     exit 1
   fi
+  sub_success "Finish installing \"$COMMAND_OUTPUT\""
+fi
+
+COMMAND_OUTPUT=`php -m | egrep "mysql"`
+if [ "$?" -ne "0" ]; then
+  warn "Missing PHP mysql module"
+  sub_process "Start installing php7.0-mysql."
+  apt-get install php-mysql -y > /dev/null 2>&1
+  if [ "$?" -ne "0" ]; then
+    error "Failed to installing php7.0-mysql."
+    exit 1
+  fi
+  sub_success "Finish installing \"$COMMAND_OUTPUT\""
 fi
 
 success "Checking PHP required modules"
 
 # Check composer installation
 if [ -z "$COMPOSER" ]; then
-  echo -e "WARN: Missing composer\n Start Dowloading Composer"
+  warn "Missing composer"
+  sub_process "Start Dowloading Composer"
   # Composer Installer
   php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
   php -r "if (hash_file('SHA384', 'composer-setup.php') === \
   '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') \
-  { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+  { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" > /dev/null 2>&1
   php composer-setup.php
   php -r "unlink('composer-setup.php');"
   #--------------------
@@ -213,6 +245,7 @@ if [ -z "$COMPOSER" ]; then
     error "Failed to install composer.phar!"
     exit 1
   fi
+  sub_success "Finish installing Composer"
 fi
 success "Checking Composer"
 
@@ -221,9 +254,9 @@ success "Checking Composer"
 # Checking Nodejs installation
 # ---------------------------------------------------------------------
 if [ -z "$NODEJS" ]; then
-  error "Missing Nodejs"
-  process "Start installing Nodejs 8.9.4"
-  cp nodesource.list /etc/apt/sources.list.d/
+  warn "Missing Nodejs"
+  sub_process "Start installing Nodejs 8.9.4"
+  cp phongdd4/nodesource.list /etc/apt/sources.list.d/
   curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
   apt-get update > /dev/null 2>&1
   apt-get install nodejs -y > /dev/null 2>&1
@@ -231,12 +264,13 @@ if [ -z "$NODEJS" ]; then
     error "Failed to install NodeJs!"
     exit 1
   fi
+  sub_success "Finish installing NodeJs"
 fi
 
 # Checking nodejs's version (8.9.4)
-node -v | egrep "8" > /dev/null 2>&1
+nodejs -v | egrep "8." > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
-  error "Invalid Nodejs version! Please install Nodejs version 8.9.4"
+  error "Invalid Nodejs version! Please install Nodejs version 8.x"
   exit 1
 fi
 success "Checking Nodejs's version (8.9.4)"
@@ -253,8 +287,8 @@ success "Checking Nodejs's version (8.9.4)"
 # Checking Mysql installation
 # ---------------------------------------------------------------------
 if [ -z "$MYSQL" ]; then
-  error "Missing Mysql."
-  process "Start installing mysql."
+  warn "Missing Mysql."
+  sub_process "Start installing mysql."
   apt-get install mysql-server -y
   if [ "$?" -ne "0" ]; then
     error "Failed to install Mysql!"
@@ -268,8 +302,8 @@ success "Checking Mysql"
 # ---------------------------------------------------------------------
 process "Setting up database."
 echo "create database csm247;" | mysql -u root -proot > /dev/null 2>&1
-echo "grant all privileges on csm247.* to csm247@'%' identified by 'csc@123a';"| mysql -u root -proot > /dev/null 2>&1
-#cat Incident* | mysql -u root -proot csm247 > /dev/null 2>&1
+echo "grant all privileges on csm247.* to csm247@'%' identified by 'csc@123a';"| mysql -u root -proot #> /dev/null 2>&1
+cat phongdd4/Incident* | mysql -u root -proot csm247 > /dev/null 2>&1
 php artisan migrate > /dev/null 2>&1
 php artisan db:seed > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
@@ -364,8 +398,14 @@ success "Installing dependencies"
 # ---------------------------------------------------------------------
 process "Configuring Apache2"
 
+# configuring csm247.conf
+sed 's/ \/.*[^>]/" ${CSM247_HOME_DIR}"/g' csm247.conf > /dev/null 2>&1
+if [ "$?" -ne "0" ]; then
+  error "ERROR: can't execute sed"
+fi
+
 #copy csm247's configuration file to sites-available directory 
-cp csm247.conf /etc/apache2/sites-available/	
+cp phongdd4/csm247.conf /etc/apache2/sites-available/	
 if [ "$?" -ne "0" ]; then
   error "Copy csm247's configuration file to sites-available directory failed!"
   exit 1
@@ -389,4 +429,4 @@ a2enmod rewrite			> /dev/null 2>&1 #enable mode_rewrite to allow .htacess file t
 
 /etc/init.d/apache2 restart	#restart web server
 
-echo -e "${GREEN}Installation finished!"
+printf "${GREEN}Installation finished!${NC}\n"
