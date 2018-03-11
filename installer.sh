@@ -19,7 +19,7 @@ CYAN='\033[0;36m'
 # Function for coloring success messages as green
 success()
 {
-  echo -e "[ ${GREEN}ok${NC} ] $1"
+  echo -ne "[ ${GREEN}ok${NC} ] $1\n"
 }
 
 # Function for coloring error messages as red
@@ -35,29 +35,29 @@ error()
   elif [ -n "`which notify-send`" ]; then
     notify-send "ERROR: $TITLE: $1"
   else
-    echo -e "${RED}ERROR${NC}: $1\n$TITLE"
+    echo -ne "${RED}ERROR${NC}: $1\n$TITLE"
   fi
 }
 
 # Function for coloring step of process's messages as yellow
 process()
 {
-  echo -e "[....] $1\r"
+  echo -ne "[....] $1\r"
 }
 
 sub_process()
 {
-  echo -e "->[....] $1\r"
+  echo -ne "->[....] $1\r"
 }
 
 sub_success()
 {
-  echo -e "->[ ${GREEN}ok${NC} ] $1\n"
+  echo -ne "->[ ${GREEN}ok${NC} ] $1\n"
 }
 
 warn()
 {
-  echo -e "${YELLOW}warn${NC}: $1"
+  echo -ne "${YELLOW}warn${NC}: $1\n"
 }
 # ---------------------------------------------------------------------
 # Variables for checking builtin command's existence
@@ -96,7 +96,7 @@ process "Checking apache2"
 
 # Check if apache2 server has been installed
 if [ -z "$APACHE2" ]; then
-	warn "Missing apache2 - Please install apache2."
+  warn "Missing apache2 - Please install apache2."
   sub_process "Start installing Apache2"
   apt-get install apache2 -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
@@ -157,7 +157,7 @@ if [ "$?" -ne "0" ]; then
     error "Failed to installing php-mbstring."
     exit 1
   fi
-  sub_success "Finished installing \"$COMMAND_OUTPUT\""
+  sub_success "Finished installing $COMMAND_OUTPUT"
 fi
 
 COMMAND_OUTPUT=`php -m | egrep "json"`
@@ -169,19 +169,19 @@ if [ "$?" -ne "0" ]; then
     error "Failed to installing php7.0-json."
     exit 1
   fi
-  sub_success "Finished installing \"$COMMAND_OUTPUT\""
+  sub_success "Finished installing $COMMAND_OUTPUT"
 fi
 
-COMMAND_OUTPUT=`php -m | egrep "xml"`
+COMMAND_OUTPUT=`php -m | egrep "^xml$"`
 if [ "$?" -ne "0" ]; then
   warn "Missing PHP xml module"
   sub_process "Start installing php-xml."
-  apt-get install php-xml -y
+  apt-get install php-xml -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to installing php-xml."
     exit 1
   fi
-  sub_success "Finished installing \"$COMMAND_OUTPUT\""
+  sub_success "Finished installing $COMMAND_OUTPUT"
 fi
 
 COMMAND_OUTPUT=`php -m | egrep "PDO"`
@@ -211,7 +211,7 @@ if [ "$?" -ne "0" ]; then
     error "Failed to installing php7.0-curl."
     exit 1
   fi
-  sub_success "Finished installing \"$COMMAND_OUTPUT\""
+  sub_success "Finished installing $COMMAND_OUTPUT"
 fi
 
 COMMAND_OUTPUT=`php -m | egrep "mysql"`
@@ -223,7 +223,7 @@ if [ "$?" -ne "0" ]; then
     error "Failed to installing php7.0-mysql."
     exit 1
   fi
-  sub_success "Finished installing \"$COMMAND_OUTPUT\""
+  sub_success "Finished installing $COMMAND_OUTPUT"
 fi
 
 success "Checked PHP required modules"
@@ -257,7 +257,7 @@ if [ -z "$NODEJS" ]; then
   warn "Missing Nodejs"
   sub_process "Start installing Nodejs 8.9.4"
   cp phongdd4/nodesource.list /etc/apt/sources.list.d/
-  curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+  curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -  > /dev/null 2>&1
   apt-get update > /dev/null 2>&1
   apt-get install nodejs -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
@@ -289,7 +289,7 @@ success "Checked Nodejs's version (8.9.4)"
 if [ -z "$MYSQL" ]; then
   warn "Missing Mysql."
   sub_process "Start installing mysql."
-  apt-get install mysql-server -y > /dev/null 2>&1
+  apt-get install mysql-server -y #> /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to install Mysql!"
     exit 1
@@ -399,7 +399,7 @@ success "Installed dependencies"
 process "Configuring Apache2"
 
 # configuring csm247.conf
-sed 's/ \/.*[^>]/" ${CSM247_HOME_DIR}"/g' phongdd4/csm247.conf > /dev/null 2>&1
+sed -i "s| /.*[^>]| ${CSM247_HOME_DIR}|g" phongdd4/csm247.conf > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
   error "ERROR: can't execute sed"
   exit 1
