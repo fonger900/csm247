@@ -152,7 +152,7 @@ COMMAND_OUTPUT=`php -m | egrep "mbstring"`
 if [ "$?" -ne "0" ]; then
   warn "Missing PHP mbstring module"
   sub_process "Start installing php7.0-mbstring."
-  apt-get install php-mbstring -y > /dev/null 2>&1
+  apt-get install php7.0-mbstring -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to installing php-mbstring."
     exit 1
@@ -176,7 +176,7 @@ COMMAND_OUTPUT=`php -m | egrep "^xml$"`
 if [ "$?" -ne "0" ]; then
   warn "Missing PHP xml module"
   sub_process "Start installing php-xml."
-  apt-get install php-xml -y > /dev/null 2>&1
+  apt-get install php7.0-xml -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to installing php-xml."
     exit 1
@@ -214,11 +214,11 @@ if [ "$?" -ne "0" ]; then
   sub_success "Finished installing $COMMAND_OUTPUT"
 fi
 
-COMMAND_OUTPUT=`php -m | egrep "mysql"`
+COMMAND_OUTPUT=`php -m | egrep "mysqli"`
 if [ "$?" -ne "0" ]; then
   warn "Missing PHP mysql module"
   sub_process "Start installing php7.0-mysql."
-  apt-get install php-mysql -y > /dev/null 2>&1
+  apt-get install php7.0-mysql -y > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     error "Failed to installing php7.0-mysql."
     exit 1
@@ -301,11 +301,11 @@ success "Checked Mysql"
 # Setup database
 # ---------------------------------------------------------------------
 process "Setting up database."
-echo "create database csm247;" | mysql -u root -proot > /dev/null 2>&1
-echo "grant all privileges on csm247.* to csm247@'%' identified by 'csc@123a';"| mysql -u root -proot > /dev/null 2>&1
-cat phongdd4/Incident* | mysql -u root -proot csm247 > /dev/null 2>&1
-php artisan migrate > /dev/null 2>&1
-php artisan db:seed > /dev/null 2>&1
+echo "create database csm247;" | mysql -u root -proot #> /dev/null 2>&1
+echo "grant all privileges on csm247.* to csm247@'%' identified by 'csc@123a';"| mysql -u root -proot #> /dev/null 2>&1
+cat phongdd4/Incident* | mysql -u root -proot csm247 #> /dev/null 2>&1
+php artisan migrate #> /dev/null 2>&1
+php artisan db:seed #> /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
   error "Failed to setting up database!"
   exit 1
@@ -376,7 +376,7 @@ success "Set permissions and ownerships"
 
 # Install Javascript's packages
 process "Installing Javascript's packages"
-sudo -u "$USER" npm install > /dev/null 2>&1
+sudo -u "$USER" npm install #> /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
   error "Failed to install Javascript's packages!"
   exit 1
@@ -385,7 +385,7 @@ success "Installed Javascript's packages"
 
 # Install project's dependencies
 process "Installing dependencies"
-sudo -u "$USER" composer install > /dev/null 2>&1
+sudo -u "$USER" composer install #> /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
   error "Failed to install dependencies!"
   exit 1
@@ -426,7 +426,7 @@ fi
 success "Configured Apache2"
 
 a2ensite csm247.conf 	> /dev/null 2>&1 #enable csm247 site
-a2enmod rewrite			> /dev/null 2>&1 #enable mode_rewrite to allow .htacess file takes effect
+a2enmod rewrite			> /dev/null 2>&1 #enable mode_rewrite to allow .htaccess file takes effect
 
 /etc/init.d/apache2 restart	#restart web server
 
